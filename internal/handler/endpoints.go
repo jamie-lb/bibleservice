@@ -22,6 +22,63 @@ func (h *BibleHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /books", h.GetBooks)
 	mux.HandleFunc("GET /book/{id}", h.GetBook)
 	mux.HandleFunc("GET /testamentBooks/{testamentId}", h.GetTestamentBooks)
+	mux.HandleFunc("GET /verse/{bookId}", h.GetBookVerses)
+	mux.HandleFunc("GET /verse/{bookId}/{chapterId}", h.GetChapterVerses)
+	mux.HandleFunc("GET /verse/{bookId}/{chapterId}/{verseId}", h.GetVerse)
+}
+
+func (h *BibleHandler) GetVerse(w http.ResponseWriter, r *http.Request) {
+	book := r.PathValue("bookId")
+	chapter := r.PathValue("chapterId")
+	verseNum := r.PathValue("verseId")
+	bookId, err := strconv.Atoi(book)
+	chapterId, err := strconv.Atoi(chapter)
+	verseId, err := strconv.Atoi(verseNum)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	verse, err := h.repo.GetVerse(r.Context(), bookId, chapterId, verseId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&verse)
+}
+
+func (h *BibleHandler) GetChapterVerses(w http.ResponseWriter, r *http.Request) {
+	book := r.PathValue("bookId")
+	chapter := r.PathValue("chapterId")
+	bookId, err := strconv.Atoi(book)
+	chapterId, err := strconv.Atoi(chapter)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	verses, err := h.repo.GetChapterVerses(r.Context(), bookId, chapterId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(verses)
+}
+
+func (h *BibleHandler) GetBookVerses(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("bookId")
+	bookId, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	verses, err := h.repo.GetBookVerses(r.Context(), bookId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(verses)
 }
 
 func (h *BibleHandler) GetTestamentBooks(w http.ResponseWriter, r *http.Request) {

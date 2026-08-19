@@ -12,6 +12,9 @@ type BibleRepository interface {
 	GetBooks(ctx context.Context) ([]Book, error)
 	GetBook(ctx context.Context, id int) (*Book, error)
 	GetTestamentBooks(ctx context.Context, testamentId int) ([]Book, error)
+	GetBookVerses(ctx context.Context, bookId int) ([]Verse, error)
+	GetChapterVerses(ctx context.Context, bookId int, chapterId int) ([]Verse, error)
+	GetVerse(ctx context.Context, bookId int, chapterId int, verseId int) (*Verse, error)
 }
 
 type sqliteBibleRepo struct {
@@ -20,6 +23,67 @@ type sqliteBibleRepo struct {
 
 func NewBibleRepository(db *sql.DB) BibleRepository {
 	return &sqliteBibleRepo{db: db}
+}
+
+func (r *sqliteBibleRepo) GetBookVerses(ctx context.Context, bookId int) ([]Verse, error) {
+	query := `SELECT id, version_code, verse_text, book_id, chapter_number, verse_number FROM verses WHERE book_id = ?;`
+	rows, err := r.db.QueryContext(ctx, query, bookId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var verses []Verse
+	for rows.Next() {
+		var verse Verse
+		if err := rows.Scan(&verse.ID, &verse.VersionCode, &verse.VerseText, &verse.BookID, &verse.ChapterNumber, &verse.VerseNumber); err != nil {
+			return nil, err
+		}
+		verses = append(verses, verse)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return verses, nil
+}
+
+func (r *sqliteBibleRepo) GetChapterVerses(ctx context.Context, bookId int, chapterId int) ([]Verse, error) {
+	query := `SELECT id, version_code, verse_text, book_id, chapter_number, verse_number FROM verses WHERE book_id = ? AND chapter_number = ?;`
+	rows, err := r.db.QueryContext(ctx, query, bookId, chapterId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var verses []Verse
+	for rows.Next() {
+		var verse Verse
+		if err := rows.Scan(&verse.ID, &verse.VersionCode, &verse.VerseText, &verse.BookID, &verse.ChapterNumber, &verse.VerseNumber); err != nil {
+			return nil, err
+		}
+		verses = append(verses, verse)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return verses, nil
+}
+
+func (r *sqliteBibleRepo) GetVerse(ctx context.Context, bookId int, chapterId int, verseId int) (*Verse, error) {
+	query := `SELECT id, version_code, verse_text, book_id, chapter_number, verse_number FROM verses WHERE book_id = ? AND chapter_number = ? AND verse_number = ?;`
+	rows, err := r.db.QueryContext(ctx, query, bookId, chapterId, verseId)
+	if err != nil {
+		return nil, err
+	}
+	var verse Verse
+	defer rows.Close()
+	if rows.Next() {
+		if err := rows.Scan(&verse.ID, &verse.VersionCode, &verse.VerseText, &verse.BookID, &verse.ChapterNumber, &verse.VerseNumber); err != nil {
+			return nil, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return &verse, nil;
 }
 
 func (r *sqliteBibleRepo) GetTestamentBooks(ctx context.Context, testamentId int) ([]Book, error) {
