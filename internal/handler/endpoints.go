@@ -22,8 +22,8 @@ func (h *BibleHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /books", h.GetBooks)
 	mux.HandleFunc("GET /book/{id}", h.GetBook)
 	mux.HandleFunc("GET /testamentBooks/{testamentId}", h.GetTestamentBooks)
-	mux.HandleFunc("GET /verse/{bookId}", h.GetBookVerses)
-	mux.HandleFunc("GET /verse/{bookId}/{chapterId}", h.GetChapterVerses)
+	mux.HandleFunc("GET /bookVerses/{bookId}", h.GetBookVerses)
+	mux.HandleFunc("GET /chapterVerses/{bookId}/{chapterId}", h.GetChapterVerses)
 	mux.HandleFunc("GET /verse/{bookId}/{chapterId}/{verseId}", h.GetVerse)
 }
 
