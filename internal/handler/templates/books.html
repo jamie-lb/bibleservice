@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bible Books</title>
+    <script src="https://unpkg.com/htmx.org"></script>
+  </head>
+  <body>
+    <h1>Books of the Bible</h1>
+    <ul id="book-list" hx-get="/api/books" hx-trigger="load"></ul>
+  </body>
+</html>

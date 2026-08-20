@@ -5,29 +5,31 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"html/template"
 )
 
-type BibleHandler struct {
+type RestHandler struct {
 	repo repository.BibleRepository
+	templates *template.Template
 }
 
-func NewBibleServiceHandler(repo repository.BibleRepository) *BibleHandler {
-	return &BibleHandler{repo: repo}
+func NewRestHandler(repo repository.BibleRepository) *RestHandler {
+	return &RestHandler{repo: repo, templates: template.Must(template.ParseGlob("internal/handler/templates/*.html"))}
 }
 
-func (h *BibleHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /versions", h.GetVersions)
-	mux.HandleFunc("GET /testaments", h.GetTestaments)
-	mux.HandleFunc("GET /testament/{id}", h.GetTestament)
-	mux.HandleFunc("GET /books", h.GetBooks)
-	mux.HandleFunc("GET /book/{id}", h.GetBook)
-	mux.HandleFunc("GET /testamentBooks/{testamentId}", h.GetTestamentBooks)
-	mux.HandleFunc("GET /bookVerses/{bookId}", h.GetBookVerses)
-	mux.HandleFunc("GET /chapterVerses/{bookId}/{chapterId}", h.GetChapterVerses)
-	mux.HandleFunc("GET /verse/{bookId}/{chapterId}/{verseId}", h.GetVerse)
+func (h *RestHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/versions", h.GetVersions)
+	mux.HandleFunc("GET /api/testaments", h.GetTestaments)
+	mux.HandleFunc("GET /api/testament/{id}", h.GetTestament)
+	mux.HandleFunc("GET /api/books", h.GetBooks)
+	mux.HandleFunc("GET /api/book/{id}", h.GetBook)
+	mux.HandleFunc("GET /api/testamentBooks/{testamentId}", h.GetTestamentBooks)
+	mux.HandleFunc("GET /api/bookVerses/{bookId}", h.GetBookVerses)
+	mux.HandleFunc("GET /api/chapterVerses/{bookId}/{chapterId}", h.GetChapterVerses)
+	mux.HandleFunc("GET /api/verse/{bookId}/{chapterId}/{verseId}", h.GetVerse)
 }
 
-func (h *BibleHandler) GetVerse(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetVerse(w http.ResponseWriter, r *http.Request) {
 	book := r.PathValue("bookId")
 	chapter := r.PathValue("chapterId")
 	verseNum := r.PathValue("verseId")
@@ -47,7 +49,7 @@ func (h *BibleHandler) GetVerse(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&verse)
 }
 
-func (h *BibleHandler) GetChapterVerses(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetChapterVerses(w http.ResponseWriter, r *http.Request) {
 	book := r.PathValue("bookId")
 	chapter := r.PathValue("chapterId")
 	bookId, err := strconv.Atoi(book)
@@ -65,7 +67,7 @@ func (h *BibleHandler) GetChapterVerses(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(verses)
 }
 
-func (h *BibleHandler) GetBookVerses(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetBookVerses(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("bookId")
 	bookId, err := strconv.Atoi(id)
 	if err != nil {
@@ -81,7 +83,7 @@ func (h *BibleHandler) GetBookVerses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(verses)
 }
 
-func (h *BibleHandler) GetTestamentBooks(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetTestamentBooks(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("testamentId")
 	testamentId, err := strconv.Atoi(id)
 	if err != nil {
@@ -97,7 +99,7 @@ func (h *BibleHandler) GetTestamentBooks(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(books)
 }
 
-func (h *BibleHandler) GetBook(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetBook(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	bookId, err := strconv.Atoi(id)
 	if err != nil {
@@ -113,17 +115,23 @@ func (h *BibleHandler) GetBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&book)
 }
 
-func (h *BibleHandler) GetBooks(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetBooks(w http.ResponseWriter, r *http.Request) {
 	books, err := h.repo.GetBooks(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if r.Header.Get("HX-Request") == "true" {
+		for _, book := range books {
+			h.templates.ExecuteTemplate(w, "booklist.html", book)
+		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(books)
 }
 
-func (h *BibleHandler) GetTestament(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetTestament(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	testamentId, err := strconv.Atoi(id)
 	if err != nil {
@@ -139,7 +147,7 @@ func (h *BibleHandler) GetTestament(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&testament)
 }
 
-func (h *BibleHandler) GetTestaments(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetTestaments(w http.ResponseWriter, r *http.Request) {
 	testaments, err := h.repo.GetTestaments(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -149,7 +157,7 @@ func (h *BibleHandler) GetTestaments(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(testaments)
 }
 
-func (h *BibleHandler) GetVersions(w http.ResponseWriter, r *http.Request) {
+func (h *RestHandler) GetVersions(w http.ResponseWriter, r *http.Request) {
 	versions, err := h.repo.GetVersions(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -16,9 +16,11 @@ func main() {
 	}
 	defer db.Close()
 	bibleRepo := repository.NewBibleRepository(db)
-	bibleHandler := handler.NewBibleServiceHandler(bibleRepo)
+	restHandler := handler.NewRestHandler(bibleRepo)
+	documentHandler := handler.NewDocumentHandler()
 	mux := http.NewServeMux()
-	bibleHandler.RegisterRoutes(mux)
+	restHandler.RegisterRoutes(mux)
+	documentHandler.RegisterRoutes(mux)
 	server := &http.Server{
 		Addr:         ":8080",
 		Handler:      mux,
