@@ -5,16 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"html/template"
 )
 
 type RestHandler struct {
-	repo repository.BibleRepository
-	templates *template.Template
+	repo repository.BibleService
 }
 
-func NewRestHandler(repo repository.BibleRepository) *RestHandler {
-	return &RestHandler{repo: repo, templates: template.Must(template.ParseGlob("internal/handler/templates/*.html"))}
+func NewRestHandler(repo repository.BibleService) *RestHandler {
+	return &RestHandler{repo: repo}
 }
 
 func (h *RestHandler) RegisterRoutes(mux *http.ServeMux) {
@@ -119,12 +117,6 @@ func (h *RestHandler) GetBooks(w http.ResponseWriter, r *http.Request) {
 	books, err := h.repo.GetBooks(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if r.Header.Get("HX-Request") == "true" {
-		for _, book := range books {
-			h.templates.ExecuteTemplate(w, "booklist.html", book)
-		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

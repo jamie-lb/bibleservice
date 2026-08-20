@@ -5,7 +5,7 @@ import (
 	"database/sql"
 )
 
-type BibleRepository interface {
+type BibleService interface {
 	GetVersions(ctx context.Context) ([]Version, error)
 	GetTestaments(ctx context.Context) ([]Testament, error)
 	GetTestament(ctx context.Context, id int) (*Testament, error)
@@ -17,17 +17,17 @@ type BibleRepository interface {
 	GetVerse(ctx context.Context, bookId int, chapterId int, verseId int) (*Verse, error)
 }
 
-type sqliteBibleRepo struct {
+type bibleDao struct {
 	db *sql.DB
 }
 
-func NewBibleRepository(db *sql.DB) BibleRepository {
-	return &sqliteBibleRepo{db: db}
+func NewBibleService(db *sql.DB) BibleService {
+	return &bibleDao{db: db}
 }
 
-func (r *sqliteBibleRepo) GetBookVerses(ctx context.Context, bookId int) ([]Verse, error) {
+func (dao *bibleDao) GetBookVerses(ctx context.Context, bookId int) ([]Verse, error) {
 	query := `SELECT id, version_code, verse_text, book_id, chapter_number, verse_number FROM verses WHERE book_id = ?;`
-	rows, err := r.db.QueryContext(ctx, query, bookId)
+	rows, err := dao.db.QueryContext(ctx, query, bookId)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +46,9 @@ func (r *sqliteBibleRepo) GetBookVerses(ctx context.Context, bookId int) ([]Vers
 	return verses, nil
 }
 
-func (r *sqliteBibleRepo) GetChapterVerses(ctx context.Context, bookId int, chapterId int) ([]Verse, error) {
+func (dao *bibleDao) GetChapterVerses(ctx context.Context, bookId int, chapterId int) ([]Verse, error) {
 	query := `SELECT id, version_code, verse_text, book_id, chapter_number, verse_number FROM verses WHERE book_id = ? AND chapter_number = ?;`
-	rows, err := r.db.QueryContext(ctx, query, bookId, chapterId)
+	rows, err := dao.db.QueryContext(ctx, query, bookId, chapterId)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +67,9 @@ func (r *sqliteBibleRepo) GetChapterVerses(ctx context.Context, bookId int, chap
 	return verses, nil
 }
 
-func (r *sqliteBibleRepo) GetVerse(ctx context.Context, bookId int, chapterId int, verseId int) (*Verse, error) {
+func (dao *bibleDao) GetVerse(ctx context.Context, bookId int, chapterId int, verseId int) (*Verse, error) {
 	query := `SELECT id, version_code, verse_text, book_id, chapter_number, verse_number FROM verses WHERE book_id = ? AND chapter_number = ? AND verse_number = ?;`
-	rows, err := r.db.QueryContext(ctx, query, bookId, chapterId, verseId)
+	rows, err := dao.db.QueryContext(ctx, query, bookId, chapterId, verseId)
 	if err != nil {
 		return nil, err
 	}
@@ -86,9 +86,9 @@ func (r *sqliteBibleRepo) GetVerse(ctx context.Context, bookId int, chapterId in
 	return &verse, nil;
 }
 
-func (r *sqliteBibleRepo) GetTestamentBooks(ctx context.Context, testamentId int) ([]Book, error) {
+func (dao *bibleDao) GetTestamentBooks(ctx context.Context, testamentId int) ([]Book, error) {
 	query := `SELECT id, title, testament_id FROM books WHERE testament_id = ?;`
-	rows, err := r.db.QueryContext(ctx, query, testamentId)
+	rows, err := dao.db.QueryContext(ctx, query, testamentId)
 	if err != nil {
 		return nil, err
 	}
@@ -107,10 +107,10 @@ func (r *sqliteBibleRepo) GetTestamentBooks(ctx context.Context, testamentId int
 	return books, nil
 }
 
-func (r *sqliteBibleRepo) GetBook(ctx context.Context, id int) (*Book, error) {
+func (dao *bibleDao) GetBook(ctx context.Context, id int) (*Book, error) {
 	var book Book;
 	query := `SELECT id, title, testament_id FROM books WHERE id = ?;`
-	rows, err := r.db.QueryContext(ctx, query, id)
+	rows, err := dao.db.QueryContext(ctx, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +126,9 @@ func (r *sqliteBibleRepo) GetBook(ctx context.Context, id int) (*Book, error) {
 	return &book, nil;
 }
 
-func (r *sqliteBibleRepo) GetBooks(ctx context.Context) ([]Book, error) {
+func (dao *bibleDao) GetBooks(ctx context.Context) ([]Book, error) {
 	query := `SELECT id, title, testament_id FROM books;`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := dao.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -147,10 +147,10 @@ func (r *sqliteBibleRepo) GetBooks(ctx context.Context) ([]Book, error) {
 	return books, nil
 }
 
-func (r *sqliteBibleRepo) GetTestament(ctx context.Context, id int) (*Testament, error) {
+func (dao *bibleDao) GetTestament(ctx context.Context, id int) (*Testament, error) {
 	var testament Testament;
 	query := `SELECT id, description FROM testaments WHERE id = ?;`
-	rows, err := r.db.QueryContext(ctx, query, id)
+	rows, err := dao.db.QueryContext(ctx, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +166,9 @@ func (r *sqliteBibleRepo) GetTestament(ctx context.Context, id int) (*Testament,
 	return &testament, nil;
 }
 
-func (r *sqliteBibleRepo) GetTestaments(ctx context.Context) ([]Testament, error) {
+func (dao *bibleDao) GetTestaments(ctx context.Context) ([]Testament, error) {
 	query := `SELECT id, description FROM testaments;`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := dao.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -187,9 +187,9 @@ func (r *sqliteBibleRepo) GetTestaments(ctx context.Context) ([]Testament, error
 	return testaments, nil
 }
 
-func (r *sqliteBibleRepo) GetVersions(ctx context.Context) ([]Version, error) {
+func (dao *bibleDao) GetVersions(ctx context.Context) ([]Version, error) {
 	query := `SELECT version_code, version_name FROM versions;`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := dao.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}

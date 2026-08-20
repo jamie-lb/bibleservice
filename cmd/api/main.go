@@ -15,9 +15,9 @@ func main() {
 		log.Fatalf("Database initialization failed: %v", err)
 	}
 	defer db.Close()
-	bibleRepo := repository.NewBibleRepository(db)
-	restHandler := handler.NewRestHandler(bibleRepo)
-	documentHandler := handler.NewDocumentHandler()
+	bibleService := repository.NewBibleService(db)
+	restHandler := handler.NewRestHandler(bibleService)
+	documentHandler := handler.NewDocumentHandler(bibleService)
 	mux := http.NewServeMux()
 	restHandler.RegisterRoutes(mux)
 	documentHandler.RegisterRoutes(mux)
