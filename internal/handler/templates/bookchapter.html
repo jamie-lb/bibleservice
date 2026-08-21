@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bible App</title>
+    <link href="/css/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="book-chapter-content">
+      <h2>
+        <a href="/book/{{ .Book.ID }}">{{ .Book.Title }}</a>
+        Chapter {{ .ChapterNumber }}
+      </h2>
+      <div class="verses-wrapper">
+        {{ range .Verses }}
+        <span>
+          <span class="verse-id-wrapper">{{ .VerseNumber }}</span>
+          <span class="verse-text-wrapper">{{ .VerseText }}</span>
+        </span>
+        {{ end }}
+      </div>
+    </div>
+  </body>
+</html>

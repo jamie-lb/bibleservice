@@ -11,6 +11,7 @@ type BibleService interface {
 	GetTestament(ctx context.Context, id int) (*Testament, error)
 	GetBooks(ctx context.Context) ([]Book, error)
 	GetBook(ctx context.Context, id int) (*Book, error)
+	GetBookChapterList(ctx context.Context, bookId int) ([]int, error)
 	GetTestamentBooks(ctx context.Context, testamentId int) ([]Book, error)
 	GetBookVerses(ctx context.Context, bookId int) ([]Verse, error)
 	GetChapterVerses(ctx context.Context, bookId int, chapterId int) ([]Verse, error)
@@ -124,6 +125,27 @@ func (dao *bibleDao) GetBook(ctx context.Context, id int) (*Book, error) {
 		return nil, err
 	}
 	return &book, nil;
+}
+
+func (dao *bibleDao) GetBookChapterList(ctx context.Context, bookId int) ([]int, error) {
+	query := `SELECT DISTINCT chapter_number FROM verses WHERE book_id = ?;`
+	rows, err := dao.db.QueryContext(ctx, query, bookId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var chapters []int
+	for rows.Next() {
+		var chapter int
+		if err := rows.Scan(&chapter); err != nil {
+			return nil, err
+		}
+		chapters = append(chapters, chapter)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return chapters, nil;
 }
 
 func (dao *bibleDao) GetBooks(ctx context.Context) ([]Book, error) {

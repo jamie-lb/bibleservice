@@ -1,0 +1,26 @@
+.book-chapter-content {
+  margin: 20px;
+  padding: 0 40px;
+}
+
+.verses-wrapper {
+  padding: 10px 40px;
+}
+
+.verse-id-wrapper {
+  font-weight: bold;
+  vertical-align: super;
+  font-size: 10px;
+}
+
+.verse-text-wrapper {
+  margin: 0 2px;
+}
+
+.books-content {
+  padding: 20px;
+}
+
+.book-entry {
+  margin: 4px 10px;
+}

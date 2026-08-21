@@ -4,8 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Book Detail</title>
+    <link href="/css/style.css" rel="stylesheet" />
   </head>
   <body>
-      <h2>Book Detail for ID: {{ . }}</h2>
+    <h2>
+      Book Detail for {{ .Book.Title }} (ID: {{ .Book.ID }})
+      <a href="/books">View All Books</a>
+    </h2>
+    {{ range .Chapters }}
+    <div>
+      <a href="{{ $.Book.ID }}/chapter/{{ . }}">Chapter {{ . }}</a>
+    </div>
+    {{ end }}
   </body>
 </html>

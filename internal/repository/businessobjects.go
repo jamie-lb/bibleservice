@@ -24,3 +24,14 @@ type Verse struct {
 	ChapterNumber int `json:"chapter_number"`
 	VerseNumber int `json:"verse_number"`
 }
+
+type BookViewData struct {
+	Book Book
+	Chapters []int
+}
+
+type BookChapterViewData struct {
+	Book Book
+	ChapterNumber int
+	Verses []Verse
+}

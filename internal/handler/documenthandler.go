@@ -17,10 +17,11 @@ func NewDocumentHandler(bibleService repository.BibleService) *DocumentHandler {
 }
 
 func (h *DocumentHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /", h.ServeHomePage)
+	mux.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.Dir("internal/handler/templates/css"))))
+	mux.HandleFunc("GET /{$}", h.ServeHomePage)
 	mux.HandleFunc("GET /books", h.ServeBooksPage)
-	mux.HandleFunc("GET /bookList", h.GetBookList)
 	mux.HandleFunc("GET /book/{id}", h.ServeBookDetailPage)
+	mux.HandleFunc("GET /book/{bookId}/chapter/{chapterId}", h.ServeBookChapterPage)
 }
 
 func (h *DocumentHandler) ServeHomePage(w http.ResponseWriter, r *http.Request) {
@@ -28,27 +29,47 @@ func (h *DocumentHandler) ServeHomePage(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *DocumentHandler) ServeBooksPage(w http.ResponseWriter, r *http.Request) {
-	h.templates.ExecuteTemplate(w, "books.html", nil)
-}
-
-func (h *DocumentHandler) GetBookList(w http.ResponseWriter, r *http.Request) {
 	books, err := h.bibleService.GetBooks(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if r.Header.Get("HX-Request") != "true" {
-		http.NotFound(w, r)
-		return
-	}
-	for _, book := range books {
-		h.templates.ExecuteTemplate(w, "booklist.html", book)
-	}
+	h.templates.ExecuteTemplate(w, "books.html", books)
 }
 
 func (h *DocumentHandler) ServeBookDetailPage(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	bookId, _ := strconv.Atoi(id)
-	h.templates.ExecuteTemplate(w, "bookdetail.html", bookId)
+	book, err := h.bibleService.GetBook(r.Context(), bookId)
+	if (err != nil) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	chapters, err := h.bibleService.GetBookChapterList(r.Context(), bookId)
+	if (err != nil) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var viewData repository.BookViewData = repository.BookViewData{Book: *book, Chapters: chapters}
+	h.templates.ExecuteTemplate(w, "bookdetail.html", viewData)
+}
+
+func (h *DocumentHandler) ServeBookChapterPage(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("bookId")
+	chapterNumber := r.PathValue("chapterId")
+	bookId, _ := strconv.Atoi(id)
+	chapterId, _ := strconv.Atoi(chapterNumber)
+	book, err := h.bibleService.GetBook(r.Context(), bookId)
+	if (err != nil) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	verses, err := h.bibleService.GetChapterVerses(r.Context(), bookId, chapterId)
+	if (err != nil) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var viewData repository.BookChapterViewData = repository.BookChapterViewData{Book: *book, ChapterNumber: chapterId, Verses: verses}
+	h.templates.ExecuteTemplate(w, "bookchapter.html", viewData)
 }
 
